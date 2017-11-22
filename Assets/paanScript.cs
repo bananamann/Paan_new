@@ -17,6 +17,9 @@ public class paanScript : MonoBehaviour {
     public GameObject mainCamera;
     GameObject clone;
 
+    Vector2 startPos;
+    Vector3 camStartPos;
+
     string direction;
     string color;
 
@@ -34,6 +37,8 @@ public class paanScript : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
+        startPos = new Vector2(gameObject.transform.position.x, gameObject.transform.position.y);
+        camStartPos = mainCamera.transform.position;
         anim = GetComponent<Animator>();
         rb = GetComponent<Rigidbody2D>();
         sr = GetComponent<SpriteRenderer>();
@@ -59,13 +64,7 @@ public class paanScript : MonoBehaviour {
 
         if (Input.GetKeyDown("q"))
         {
-            transform.position = new Vector2(-3.3f, -3.37f);
-            sr.flipY = false;
-            rb.gravityScale = 6.0f;
-            rb.velocity = new Vector2(0f, 0f);
-            isGrounded = true;
-            isFalling = false;
-            mainCamera.GetComponent<Transform>().position = new Vector3(0f, 0f, -1.0f);
+            ResetGame();
         }
 
         if (Input.GetKeyDown("x"))
@@ -140,15 +139,9 @@ public class paanScript : MonoBehaviour {
                 rb.velocity = new Vector2(rb.velocity.x, 0);
                 reachedMaxJump = false;
             }
-        } else if (coll.gameObject.tag.Contains("spike"))
+        } else if (coll.gameObject.tag.Contains("obstacle"))
         {
-            transform.position = new Vector2(-3.3f, -3.37f);
-            sr.flipY = false;
-            rb.gravityScale = 6.0f;
-            rb.velocity = new Vector2(0f, 0f);
-            isGrounded = true;
-            isFalling = false;
-            mainCamera.GetComponent<Transform>().position = new Vector3(0f, 0f, -1.0f);
+            ResetGame();
         }
     }
     // END COLLISIONS *********************
@@ -179,7 +172,7 @@ public class paanScript : MonoBehaviour {
             }
         }
 
-        if (Input.GetKeyDown("space") && isGrounded && canJumpAgain)
+        if (Input.GetKeyDown("space") && isGrounded && canJumpAgain && !isFalling)
         {
             gameObject.transform.parent = null;
             jumpFromHeight = rb.transform.position.y;
@@ -335,5 +328,16 @@ public class paanScript : MonoBehaviour {
 
         Destroy(clone);
         cloneCount += 1;
+    }
+
+    private void ResetGame()
+    {
+        transform.position = startPos;
+        mainCamera.gameObject.transform.position = camStartPos;
+        sr.flipY = false;
+        rb.gravityScale = 6.0f;
+        rb.velocity = new Vector2(0f, 0f);
+        isGrounded = true;
+        isFalling = false;
     }
 }
