@@ -18,6 +18,7 @@ public class paanScript : MonoBehaviour {
     GameObject clone;
 
     Vector2 startPos;
+    Vector2 wallJumpStartPos;
     Vector3 camStartPos;
 
     string direction;
@@ -34,6 +35,7 @@ public class paanScript : MonoBehaviour {
     bool isGrounded = true;
     bool isFalling = false;
     bool canJumpAgain = true;
+    bool canWallJump = false;
 
 	// Use this for initialization
 	void Start () {
@@ -49,6 +51,17 @@ public class paanScript : MonoBehaviour {
 	// Update is called once per frame
 	void Update ()
     {
+        if (canWallJump)
+        {
+            if (sr.flipX)
+            {
+                canWallJump = wallJumpStartPos.x - rb.position.x >= 0.3f ? false : true;
+            } else if (!sr.flipX)
+            {
+                canWallJump = wallJumpStartPos.x - rb.position.x >= 0.3f ? false : true;
+            }
+        }
+
         if (color == "yellow")
         {
             yellowAbilities();
@@ -106,7 +119,7 @@ public class paanScript : MonoBehaviour {
             {
                 isGrounded = true;
                 isFalling = false;
-            } else if (coll.transform.position.y > rb.transform.position.y)
+            } else if ((coll.transform.position.y > rb.transform.position.y) && coll.gameObject.tag.Contains("platform"))
             {
                 reachedMaxJump = true;
             }
@@ -139,7 +152,12 @@ public class paanScript : MonoBehaviour {
                 rb.velocity = new Vector2(rb.velocity.x, 0);
                 reachedMaxJump = false;
             }
-        } else if (coll.gameObject.tag.Contains("obstacle"))
+        } else if (coll.gameObject.tag.Contains("wall"))
+        {
+            wallJumpStartPos = rb.position;
+            canWallJump = true;
+        }
+        else if (coll.gameObject.tag.Contains("obstacle"))
         {
             ResetGame();
         }
@@ -185,6 +203,15 @@ public class paanScript : MonoBehaviour {
             }
             isGrounded = false;
             canJumpAgain = false;
+        } else if (Input.GetKeyDown("space") && canWallJump)
+        {
+            if (sr.flipX)
+            {
+                rb.velocity = new Vector2(6.0f, 30.0f);
+            } else if (!sr.flipX)
+            {
+                rb.velocity = new Vector2(-6.0f, 30.0f);
+            }
         }
         else if (Input.GetKey("space") && !reachedMaxJump && !isFalling && !isGrounded && !canJumpAgain)
         {
