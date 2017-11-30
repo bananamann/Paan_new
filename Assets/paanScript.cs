@@ -17,6 +17,8 @@ public class paanScript : MonoBehaviour {
     public GameObject mainCamera;
     GameObject clone;
 
+    Collision2D currentPlat;
+
     Vector2 startPos;
     Vector2 wallJumpStartPos;
     Vector3 camStartPos;
@@ -51,14 +53,14 @@ public class paanScript : MonoBehaviour {
 	// Update is called once per frame
 	void Update ()
     {
-        if (canWallJump)
+        if (canWallJump && isFalling)
         {
             if (sr.flipX)
             {
-                canWallJump = wallJumpStartPos.x - rb.position.x >= 0.3f ? false : true;
+                canWallJump = wallJumpStartPos.x - rb.position.x >= 0.5f ? false : true;
             } else if (!sr.flipX)
             {
-                canWallJump = wallJumpStartPos.x - rb.position.x >= 0.3f ? false : true;
+                canWallJump = wallJumpStartPos.x - rb.position.x >= 0.5f ? false : true;
             }
         }
 
@@ -104,6 +106,10 @@ public class paanScript : MonoBehaviour {
         }
         else
         {
+            if (isGrounded)
+            {
+                rb.velocity = new Vector2(0f, rb.velocity.y);
+            }
             anim.SetBool("walking", false);
             anim.SetBool("running", false);
         }
@@ -113,9 +119,10 @@ public class paanScript : MonoBehaviour {
     //landing on platforms
     void OnCollisionEnter2D(Collision2D coll)
     {
+        currentPlat = coll;
         if (sr.flipY == false)
         {
-            if (coll.transform.position.y < rb.transform.position.y)
+            if ((coll.transform.position.y < rb.transform.position.y) && coll.gameObject.tag.Contains("platform"))
             {
                 isGrounded = true;
                 isFalling = false;
@@ -125,7 +132,7 @@ public class paanScript : MonoBehaviour {
             }
         } else if (sr.flipY)
         {
-            if (coll.transform.position.y > rb.transform.position.y)
+            if ((coll.transform.position.y > rb.transform.position.y) && coll.gameObject.tag.Contains("platform"))
             {
                 isGrounded = true;
                 isFalling = false;
@@ -196,10 +203,10 @@ public class paanScript : MonoBehaviour {
             jumpFromHeight = rb.transform.position.y;
             if (sr.flipY == true)
             {
-                rb.velocity += new Vector2(rb.velocity.x, -12.0f);
+                rb.velocity = new Vector2(rb.velocity.x, -12.0f);
             } else
             {
-                rb.velocity += new Vector2(rb.velocity.x, 12.0f);
+                rb.velocity = new Vector2(rb.velocity.x, 12.0f);
             }
             isGrounded = false;
             canJumpAgain = false;
@@ -207,11 +214,14 @@ public class paanScript : MonoBehaviour {
         {
             if (sr.flipX)
             {
-                rb.velocity = new Vector2(6.0f, 30.0f);
+                rb.velocity = new Vector2(10.0f, 24.0f);
+                sr.flipX = false;
             } else if (!sr.flipX)
             {
-                rb.velocity = new Vector2(-6.0f, 30.0f);
+                rb.velocity = new Vector2(-10.0f, 24.0f);
+                sr.flipX = true;
             }
+            canWallJump = false;
         }
         else if (Input.GetKey("space") && !reachedMaxJump && !isFalling && !isGrounded && !canJumpAgain)
         {
@@ -238,13 +248,13 @@ public class paanScript : MonoBehaviour {
         if (Input.GetKeyDown("space") && sr.flipY == false && flipCount == 1)
         {
             sr.flipY = true;
-            rb.velocity = new Vector2(0f, (rb.velocity.y * 0.45f));
+            rb.velocity = new Vector2(0f, (rb.velocity.y * 0.4f));
             rb.gravityScale = rb.gravityScale * gravityFlip;
             flipCount = 0;
         }
         else if (Input.GetKeyDown("space") && sr.flipY == true && flipCount == 1) {
             sr.flipY = false;
-            rb.velocity = new Vector2(0f, (rb.velocity.y * 0.45f));
+            rb.velocity = new Vector2(0f, (rb.velocity.y * 0.4f));
             rb.gravityScale = rb.gravityScale * gravityFlip;
             flipCount = 0;
         }
@@ -256,6 +266,7 @@ public class paanScript : MonoBehaviour {
         if (Input.GetKeyDown("space") && cloneCount == 1)
         {
             clone = Instantiate(paanClone, new Vector2(gameObject.transform.position.x, gameObject.transform.position.y), gameObject.transform.rotation) as GameObject;
+            clone.transform.SetParent(currentPlat.gameObject.transform);
             clone.gameObject.GetComponent<Rigidbody2D>().gravityScale = rb.gravityScale;
             clone.GetComponent<SpriteRenderer>().flipX = sr.flipX;
             clone.GetComponent<SpriteRenderer>().flipY = sr.flipY;
@@ -297,7 +308,7 @@ public class paanScript : MonoBehaviour {
         {
             anim.SetBool("running", true);
             anim.SetBool("walking", false);
-            speedMult = 2.4f;
+            speedMult = 4.0f;
         }
         else
         {
@@ -305,7 +316,10 @@ public class paanScript : MonoBehaviour {
             anim.SetBool("running", false);
         }
         sr.flipX = false;
-        transform.Translate(0.08f * speedMult, 0, 0);
+        if (rb.velocity.x < 10f)
+        {
+            rb.velocity += new Vector2(speedMult, 0f);
+        }
     }
 
     private void walkLeft()
@@ -323,7 +337,10 @@ public class paanScript : MonoBehaviour {
             anim.SetBool("running", false);
         }
         sr.flipX = true;
-        transform.Translate(-0.08f * speedMult, 0, 0);
+        if (rb.velocity.x > -10f)
+        {
+            rb.velocity -= new Vector2(speedMult, 0f);
+        }
     }
 
     private IEnumerator teleportToCloneWithDelay(GameObject clone)
