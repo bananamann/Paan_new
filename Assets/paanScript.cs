@@ -53,15 +53,20 @@ public class paanScript : MonoBehaviour {
 	// Update is called once per frame
 	void Update ()
     {
-        if (canWallJump && isFalling)
+        if (canWallJump)
         {
             if (sr.flipX)
             {
-                canWallJump = wallJumpStartPos.x - rb.position.x >= 0.5f ? false : true;
+                canWallJump = wallJumpStartPos.x - rb.position.x >= 0.3f ? false : true;
             } else if (!sr.flipX)
             {
-                canWallJump = wallJumpStartPos.x - rb.position.x >= 0.5f ? false : true;
+                canWallJump = rb.position.x - wallJumpStartPos.x >= 0.3f ? false : true;
             }
+        }
+
+        if (isFalling)
+        {
+            isGrounded = false;
         }
 
         if (color == "yellow")
@@ -108,7 +113,7 @@ public class paanScript : MonoBehaviour {
         {
             if (isGrounded)
             {
-                rb.velocity = new Vector2(0f, rb.velocity.y);
+                rb.velocity = new Vector2(rb.velocity.x * 0.85f, rb.velocity.y);
             }
             anim.SetBool("walking", false);
             anim.SetBool("running", false);
@@ -187,7 +192,7 @@ public class paanScript : MonoBehaviour {
         }
         else if (sr.flipY == false)
         {
-            if (rb.velocity.y <= -0.1f && gameObject.transform.parent == null)
+            if (rb.velocity.y <= -0.1f)
             {
                 isFalling = true;
             }
@@ -227,10 +232,10 @@ public class paanScript : MonoBehaviour {
         {
             if (sr.flipY == true)
             {
-                reachedMaxJump = (jumpFromHeight - rb.position.y) >= 1.6f ? true : false;
+                reachedMaxJump = (jumpFromHeight - rb.position.y) >= 1.2f ? true : false;
                 rb.velocity += new Vector2(0, -1.6f);
             } else {
-                reachedMaxJump = (rb.position.y - jumpFromHeight) >= 1.6f ? true : false;
+                reachedMaxJump = (rb.position.y - jumpFromHeight) >= 1.2f ? true : false;
                 rb.velocity += new Vector2(0, 1.6f);
             }
         }
@@ -308,7 +313,7 @@ public class paanScript : MonoBehaviour {
         {
             anim.SetBool("running", true);
             anim.SetBool("walking", false);
-            speedMult = 4.0f;
+            speedMult = 1.4f;
         }
         else
         {
@@ -316,10 +321,7 @@ public class paanScript : MonoBehaviour {
             anim.SetBool("running", false);
         }
         sr.flipX = false;
-        if (rb.velocity.x < 10f)
-        {
-            rb.velocity += new Vector2(speedMult, 0f);
-        }
+        rb.velocity += new Vector2(speedMult, 0f);
     }
 
     private void walkLeft()
@@ -329,7 +331,7 @@ public class paanScript : MonoBehaviour {
         {
             anim.SetBool("running", true);
             anim.SetBool("walking", false);
-            speedMult = 2.4f;
+            speedMult = 1.4f;
         }
         else
         {
@@ -337,10 +339,7 @@ public class paanScript : MonoBehaviour {
             anim.SetBool("running", false);
         }
         sr.flipX = true;
-        if (rb.velocity.x > -10f)
-        {
-            rb.velocity -= new Vector2(speedMult, 0f);
-        }
+        rb.velocity -= new Vector2(speedMult, 0f);
     }
 
     private IEnumerator teleportToCloneWithDelay(GameObject clone)
