@@ -49,6 +49,7 @@
      <Compile Include="Assets\cameraScript.cs" />
      <Compile Include="Assets\dropPlatScript.cs" />
      <Compile Include="Assets\gunScript.cs" />
+     <Compile Include="Assets\laserScript.cs" />
      <Compile Include="Assets\movingPlatScript.cs" />
      <Compile Include="Assets\paanScript.cs" />
      <Compile Include="Assets\projScript.cs" />

@@ -34,6 +34,7 @@ public class paanScript : MonoBehaviour {
     float gravityFlip = -1.0f;
 
     bool reachedMaxJump = false;
+    bool reachedMaxSpeed = false;
     bool isGrounded = true;
     bool isFalling = false;
     bool canJumpAgain = true;
@@ -77,10 +78,10 @@ public class paanScript : MonoBehaviour {
         {
             blueAbilities();
         }
-        else if (color == "purple")
-        {
-            purpleAbilities();
-        }
+        //else if (color == "purple")
+        //{
+        //    purpleAbilities();
+        //}
 
         if (Input.GetKeyDown("q"))
         {
@@ -117,6 +118,7 @@ public class paanScript : MonoBehaviour {
             }
             anim.SetBool("walking", false);
             anim.SetBool("running", false);
+            reachedMaxSpeed = false;
         }
     }
 
@@ -160,7 +162,11 @@ public class paanScript : MonoBehaviour {
                 collPosY = coll.transform.GetChild(0).transform.position.y;
             }
 
-            if (paanPos.y > collPosY) {
+            if (paanPos.y > collPosY && !sr.flipY) {
+                rb.velocity = new Vector2(rb.velocity.x, 0);
+                reachedMaxJump = false;
+            } else if (paanPos.y < collPosY && sr.flipY)
+            {
                 rb.velocity = new Vector2(rb.velocity.x, 0);
                 reachedMaxJump = false;
             }
@@ -217,13 +223,14 @@ public class paanScript : MonoBehaviour {
             canJumpAgain = false;
         } else if (Input.GetKeyDown("space") && canWallJump)
         {
+            var yJump = sr.flipY == true ? -24.0f : 24.0f;
             if (sr.flipX)
             {
-                rb.velocity = new Vector2(10.0f, 24.0f);
+                rb.velocity = new Vector2(10.0f, yJump);
                 sr.flipX = false;
             } else if (!sr.flipX)
             {
-                rb.velocity = new Vector2(-10.0f, 24.0f);
+                rb.velocity = new Vector2(-10.0f, yJump);
                 sr.flipX = true;
             }
             canWallJump = false;
@@ -241,7 +248,6 @@ public class paanScript : MonoBehaviour {
         }
         else if (Input.GetKeyUp("space"))
         {
-            isFalling = true;
             reachedMaxJump = false;
             canJumpAgain = true;
         }
@@ -294,26 +300,25 @@ public class paanScript : MonoBehaviour {
         }
         else if (color == "blue")
         {
-            anim.runtimeAnimatorController = purpleController;
-            color = "purple";
-        }
-        else if (color == "purple")
-        {
             anim.runtimeAnimatorController = yellowController;
             color = "yellow";
         }
+        //else if (color == "purple")
+        //{
+        //    anim.runtimeAnimatorController = yellowController;
+        //    color = "yellow";
+        //}
     }
 
     //**********************************************************************************************************************
     //basic movement stuff
     private void walkRight()
     {
-        direction = "right";
         if (Input.GetKey("left shift"))
         {
             anim.SetBool("running", true);
             anim.SetBool("walking", false);
-            speedMult = 1.4f;
+            speedMult = 1.6f;
         }
         else
         {
@@ -321,17 +326,25 @@ public class paanScript : MonoBehaviour {
             anim.SetBool("running", false);
         }
         sr.flipX = false;
-        rb.velocity += new Vector2(speedMult, 0f);
+        
+        if (rb.velocity.x <= (10f * speedMult))
+        {
+            rb.velocity += new Vector2(speedMult, 0f);
+        } else
+        {
+            rb.velocity = new Vector2((10f * speedMult), rb.velocity.y);
+        }
+
+        //transform.Translate(0.08f * speedMult, 0, 0);
     }
 
     private void walkLeft()
     {
-        direction = "left";
         if (Input.GetKey("left shift"))
         {
             anim.SetBool("running", true);
             anim.SetBool("walking", false);
-            speedMult = 1.4f;
+            speedMult = 1.6f;
         }
         else
         {
@@ -339,7 +352,14 @@ public class paanScript : MonoBehaviour {
             anim.SetBool("running", false);
         }
         sr.flipX = true;
-        rb.velocity -= new Vector2(speedMult, 0f);
+        
+        if (rb.velocity.x >= (-10f * speedMult))
+        {
+            rb.velocity -= new Vector2(speedMult, 0f);
+        } else
+        {
+            rb.velocity = new Vector2((-10f * speedMult), rb.velocity.y);
+        }
     }
 
     private IEnumerator teleportToCloneWithDelay(GameObject clone)
