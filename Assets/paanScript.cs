@@ -30,7 +30,7 @@ public class paanScript : MonoBehaviour {
     int cloneCount = 1;
 
     float jumpFromHeight;
-    float speedMult = 1.0f;
+    float speedMult = 0.6f;
     float gravityFlip = -1.0f;
 
     bool reachedMaxJump = false;
@@ -96,7 +96,7 @@ public class paanScript : MonoBehaviour {
         if (Input.GetKeyUp("left shift"))
         {
             anim.SetBool("running", false);
-            speedMult = 1.0f;
+            speedMult = 0.6f;
         }
     }
 
@@ -214,10 +214,10 @@ public class paanScript : MonoBehaviour {
             jumpFromHeight = rb.transform.position.y;
             if (sr.flipY == true)
             {
-                rb.velocity = new Vector2(rb.velocity.x, -12.0f);
+                rb.velocity = new Vector2(rb.velocity.x, -8.0f);
             } else
             {
-                rb.velocity = new Vector2(rb.velocity.x, 12.0f);
+                rb.velocity = new Vector2(rb.velocity.x, 8.0f);
             }
             isGrounded = false;
             canJumpAgain = false;
@@ -240,10 +240,10 @@ public class paanScript : MonoBehaviour {
             if (sr.flipY == true)
             {
                 reachedMaxJump = (jumpFromHeight - rb.position.y) >= 1.2f ? true : false;
-                rb.velocity += new Vector2(0, -1.6f);
+                rb.velocity += new Vector2(0f, -1.6f);
             } else {
                 reachedMaxJump = (rb.position.y - jumpFromHeight) >= 1.2f ? true : false;
-                rb.velocity += new Vector2(0, 1.6f);
+                rb.velocity += new Vector2(0f, 1.6f);
             }
         }
         else if (Input.GetKeyUp("space"))
@@ -318,7 +318,7 @@ public class paanScript : MonoBehaviour {
         {
             anim.SetBool("running", true);
             anim.SetBool("walking", false);
-            speedMult = 1.6f;
+            speedMult = 1.3f;
         }
         else
         {
@@ -344,7 +344,7 @@ public class paanScript : MonoBehaviour {
         {
             anim.SetBool("running", true);
             anim.SetBool("walking", false);
-            speedMult = 1.6f;
+            speedMult = 1.3f;
         }
         else
         {
