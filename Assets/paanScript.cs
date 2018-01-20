@@ -70,13 +70,23 @@ public class paanScript : MonoBehaviour {
             isGrounded = false;
         }
 
-        if (color == "yellow")
+        //if (color == "yellow")
+        //{
+        //    yellowAbilities();
+        //}
+        //else if (color == "blue")
+        //{
+        //    blueAbilities();
+        //}
+
+        if (Input.GetButtonUp("Jump"))
         {
-            yellowAbilities();
-        }
-        else if (color == "blue")
-        {
-            blueAbilities();
+            reachedMaxJump = false;
+            canJumpAgain = true;
+            if (!isFalling)
+            {
+                rb.velocity = new Vector2(rb.velocity.x, (rb.velocity.y * 0.4f));
+            }
         }
 
         if (Input.GetButtonDown("Reset"))
@@ -89,6 +99,11 @@ public class paanScript : MonoBehaviour {
             switchColors();
         }
 
+        if (isGrounded && !isFalling && !Input.GetButton("Jump"))
+        {
+            flipCount = 1;
+        }
+
         if (Input.GetKeyUp("left shift"))
         {
             anim.SetBool("running", false);
@@ -98,6 +113,13 @@ public class paanScript : MonoBehaviour {
 
     void FixedUpdate()
     {
+        isFalling = (gravityFlip * rb.velocity.y) <= -0.1f ? true : false;
+
+        if (Input.GetButton("Jump"))
+        {
+            UseAbility();
+        }
+
         if (Input.GetKey("right") || (Input.GetAxis("Horizontal") == 1))
         {
             walkRight();
@@ -142,11 +164,6 @@ public class paanScript : MonoBehaviour {
             }
         }
 
-        if (isGrounded && !isFalling)
-        {
-            flipCount = 1;
-        }
-
         float collPosY;
         var paanPos = rb.transform.position;
 
@@ -179,67 +196,46 @@ public class paanScript : MonoBehaviour {
     }
     // END COLLISIONS *********************
 
-    //yellow abilities
-    private void yellowAbilities()
+    private void YellowAbility()
     {
-        isFalling = (gravityFlip * rb.velocity.y) <= -0.1f ? true : false;
-
-        if (Input.GetButtonDown("Jump") && isGrounded && canJumpAgain && !isFalling)
+        if (isGrounded && canJumpAgain && !isFalling)
         {
             gameObject.transform.parent = null;
             jumpFromHeight = rb.transform.position.y;
-            rb.velocity = new Vector2(rb.velocity.x, (6.0f * gravityFlip));
+            rb.velocity = new Vector2(rb.velocity.x, (14.0f * gravityFlip));
             isGrounded = false;
             canJumpAgain = false;
-        } else if (Input.GetButtonDown("Jump") && canWallJump)
+        }
+        else if (canWallJump)
         {
             var yJump = sr.flipY == true ? -20.0f : 20.0f;
             rb.velocity = new Vector2((8.0f * gravityFlip), yJump);
             sr.flipX = !sr.flipX;
             canWallJump = false;
         }
-        else if (Input.GetButton("Jump") && !reachedMaxJump && !isFalling && !isGrounded && !canJumpAgain)
+        else if (!reachedMaxJump && !isFalling && !isGrounded && !canJumpAgain)
         {
             if (sr.flipY == true)
             {
-                reachedMaxJump = (jumpFromHeight - rb.position.y) >= 1.0f ? true : false;
-            } else {
-                reachedMaxJump = (rb.position.y - jumpFromHeight) >= 1.0f ? true : false;
+                reachedMaxJump = (jumpFromHeight - rb.position.y) >= 1.6f ? true : false;
             }
-            rb.velocity += new Vector2(0f, (2.2f * gravityFlip));
-        }
-        else if (Input.GetButtonUp("Jump"))
-        {
-            reachedMaxJump = false;
-            canJumpAgain = true;
+            else
+            {
+                reachedMaxJump = (rb.position.y - jumpFromHeight) >= 1.6f ? true : false;
+            }
+            rb.velocity += new Vector2(0f, (2.0f * gravityFlip));
         }
     }
-    
-    //blue abilities
-    private void blueAbilities()
+
+    private void BlueAbility()
     {
-        if (Input.GetButtonDown("Jump") && flipCount == 1)
+        if (flipCount == 1)
         {
             gravityFlip = gravityFlip * -1.0f;
             sr.flipY = !sr.flipY;
             rb.velocity = new Vector2(0f, (rb.velocity.y * 0.4f));
             rb.gravityScale = rb.gravityScale * -1.0f;
             flipCount = 0;
-        }
-    }
-
-    //switch colors
-    private void switchColors()
-    {
-        if (color == "yellow")
-        {
-            anim.runtimeAnimatorController = blueController;
-            color = "blue";
-        }
-        else if (color == "blue")
-        {
-            anim.runtimeAnimatorController = yellowController;
-            color = "yellow";
         }
     }
 
@@ -260,15 +256,13 @@ public class paanScript : MonoBehaviour {
         }
         sr.flipX = false;
         
-        if (rb.velocity.x <= (10f * speedMult))
+        if (rb.velocity.x <= (8f * speedMult))
         {
             rb.velocity += new Vector2(speedMult, 0f);
         } else
         {
-            rb.velocity = new Vector2((10f * speedMult), rb.velocity.y);
+            rb.velocity = new Vector2((8f * speedMult), rb.velocity.y);
         }
-
-        //transform.Translate(0.08f * speedMult, 0, 0);
     }
 
     private void walkLeft()
@@ -286,44 +280,40 @@ public class paanScript : MonoBehaviour {
         }
         sr.flipX = true;
         
-        if (rb.velocity.x >= (-10f * speedMult))
+        if (rb.velocity.x >= (-8f * speedMult))
         {
             rb.velocity -= new Vector2(speedMult, 0f);
         } else
         {
-            rb.velocity = new Vector2((-10f * speedMult), rb.velocity.y);
+            rb.velocity = new Vector2((-8f * speedMult), rb.velocity.y);
         }
     }
 
-    private IEnumerator teleportToCloneWithDelay(GameObject clone)
+    //switch colors
+    private void switchColors()
     {
-        yield return new WaitForSeconds(4.0f);
-
-        if (clone != null)
+        if (color == "yellow")
         {
-            rb.transform.position = clone.transform.position;
-            rb.gravityScale = clone.GetComponent<Rigidbody2D>().gravityScale;
-
-            sr.transform.rotation = clone.transform.rotation;
-            sr.flipY = clone.GetComponent<SpriteRenderer>().flipY;
-            sr.flipX = clone.GetComponent<SpriteRenderer>().flipX;
-
-            Destroy(clone);
-            cloneCount += 1;
+            anim.runtimeAnimatorController = blueController;
+            color = "blue";
+        }
+        else if (color == "blue")
+        {
+            anim.runtimeAnimatorController = yellowController;
+            color = "yellow";
         }
     }
 
-    private void teleportToClone(GameObject clone)
+    private void UseAbility()
     {
-        rb.transform.position = clone.transform.position;
-        rb.gravityScale = clone.GetComponent<Rigidbody2D>().gravityScale;
-
-        sr.transform.rotation = clone.transform.rotation;
-        sr.flipY = clone.GetComponent<SpriteRenderer>().flipY;
-        sr.flipX = clone.GetComponent<SpriteRenderer>().flipX;
-
-        Destroy(clone);
-        cloneCount += 1;
+        if (color == "yellow")
+        {
+            YellowAbility();
+        }
+        else
+        {
+            BlueAbility();
+        }
     }
 
     private IEnumerator ResetGameAfterDelay()
@@ -339,8 +329,12 @@ public class paanScript : MonoBehaviour {
         mainCamera.gameObject.transform.position = camStartPos;
         sr.flipY = false;
         rb.gravityScale = 6.0f;
+        gravityFlip = 1.0f;
         rb.velocity = new Vector2(0f, 0f);
-        isGrounded = true;
-        isFalling = false;
+        color = "yellow";
+        anim.runtimeAnimatorController = baseController;
+        canJumpAgain = true;
+        reachedMaxJump = false;
+        flipCount = 1;
     }
 }
