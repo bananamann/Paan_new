@@ -30,8 +30,8 @@ public class paanScript : MonoBehaviour {
     int cloneCount = 1;
 
     float jumpFromHeight;
-    float speedMult = 0.6f;
-    float gravityFlip = -1.0f;
+    float speedMult = 0.8f;
+    float gravityFlip = 1.0f;
 
     bool reachedMaxJump = false;
     bool reachedMaxSpeed = false;
@@ -78,17 +78,13 @@ public class paanScript : MonoBehaviour {
         {
             blueAbilities();
         }
-        //else if (color == "purple")
-        //{
-        //    purpleAbilities();
-        //}
 
-        if (Input.GetKeyDown("q"))
+        if (Input.GetButtonDown("Reset"))
         {
             ResetGame();
         }
 
-        if (Input.GetKeyDown("x"))
+        if (Input.GetButtonDown("Switch"))
         {
             switchColors();
         }
@@ -96,17 +92,17 @@ public class paanScript : MonoBehaviour {
         if (Input.GetKeyUp("left shift"))
         {
             anim.SetBool("running", false);
-            speedMult = 0.6f;
+            speedMult = 0.8f;
         }
     }
 
     void FixedUpdate()
     {
-        if (Input.GetKey("right"))
+        if (Input.GetKey("right") || (Input.GetAxis("Horizontal") == 1))
         {
             walkRight();
         }
-        else if (Input.GetKey("left"))
+        else if (Input.GetKey("left") || (Input.GetAxis("Horizontal") == -1))
         {
             walkLeft();
         }
@@ -163,11 +159,11 @@ public class paanScript : MonoBehaviour {
             }
 
             if (paanPos.y > collPosY && !sr.flipY) {
-                rb.velocity = new Vector2(rb.velocity.x, 0);
+                rb.velocity = new Vector2(rb.velocity.x, 0f);
                 reachedMaxJump = false;
             } else if (paanPos.y < collPosY && sr.flipY)
             {
-                rb.velocity = new Vector2(rb.velocity.x, 0);
+                rb.velocity = new Vector2(rb.velocity.x, 0f);
                 reachedMaxJump = false;
             }
         } else if (coll.gameObject.tag.Contains("wall"))
@@ -177,6 +173,7 @@ public class paanScript : MonoBehaviour {
         }
         else if (coll.gameObject.tag.Contains("obstacle"))
         {
+            //ResetGameAfterDelay();
             ResetGame();
         }
     }
@@ -185,68 +182,33 @@ public class paanScript : MonoBehaviour {
     //yellow abilities
     private void yellowAbilities()
     {
-        if (sr.flipY == true)
-        {
-            if (rb.velocity.y >= 0.1f)
-            {
-                isFalling = true;
-            }
-            else
-            {
-                isFalling = false;
-            }
-        }
-        else if (sr.flipY == false)
-        {
-            if (rb.velocity.y <= -0.1f)
-            {
-                isFalling = true;
-            }
-            else
-            {
-                isFalling = false;
-            }
-        }
+        isFalling = (gravityFlip * rb.velocity.y) <= -0.1f ? true : false;
 
-        if (Input.GetKeyDown("space") && isGrounded && canJumpAgain && !isFalling)
+        if (Input.GetButtonDown("Jump") && isGrounded && canJumpAgain && !isFalling)
         {
             gameObject.transform.parent = null;
             jumpFromHeight = rb.transform.position.y;
-            if (sr.flipY == true)
-            {
-                rb.velocity = new Vector2(rb.velocity.x, -8.0f);
-            } else
-            {
-                rb.velocity = new Vector2(rb.velocity.x, 8.0f);
-            }
+            rb.velocity = new Vector2(rb.velocity.x, (6.0f * gravityFlip));
             isGrounded = false;
             canJumpAgain = false;
-        } else if (Input.GetKeyDown("space") && canWallJump)
+        } else if (Input.GetButtonDown("Jump") && canWallJump)
         {
-            var yJump = sr.flipY == true ? -24.0f : 24.0f;
-            if (sr.flipX)
-            {
-                rb.velocity = new Vector2(10.0f, yJump);
-                sr.flipX = false;
-            } else if (!sr.flipX)
-            {
-                rb.velocity = new Vector2(-10.0f, yJump);
-                sr.flipX = true;
-            }
+            var yJump = sr.flipY == true ? -20.0f : 20.0f;
+            rb.velocity = new Vector2((8.0f * gravityFlip), yJump);
+            sr.flipX = !sr.flipX;
             canWallJump = false;
         }
-        else if (Input.GetKey("space") && !reachedMaxJump && !isFalling && !isGrounded && !canJumpAgain)
+        else if (Input.GetButton("Jump") && !reachedMaxJump && !isFalling && !isGrounded && !canJumpAgain)
         {
             if (sr.flipY == true)
             {
-                reachedMaxJump = (jumpFromHeight - rb.position.y) >= 1.2f ? true : false;
-                rb.velocity += new Vector2(0f, -1.6f);
+                reachedMaxJump = (jumpFromHeight - rb.position.y) >= 1.0f ? true : false;
             } else {
-                reachedMaxJump = (rb.position.y - jumpFromHeight) >= 1.2f ? true : false;
-                rb.velocity += new Vector2(0f, 1.6f);
+                reachedMaxJump = (rb.position.y - jumpFromHeight) >= 1.0f ? true : false;
             }
+            rb.velocity += new Vector2(0f, (2.2f * gravityFlip));
         }
-        else if (Input.GetKeyUp("space"))
+        else if (Input.GetButtonUp("Jump"))
         {
             reachedMaxJump = false;
             canJumpAgain = true;
@@ -256,37 +218,13 @@ public class paanScript : MonoBehaviour {
     //blue abilities
     private void blueAbilities()
     {
-        if (Input.GetKeyDown("space") && sr.flipY == false && flipCount == 1)
+        if (Input.GetButtonDown("Jump") && flipCount == 1)
         {
-            sr.flipY = true;
+            gravityFlip = gravityFlip * -1.0f;
+            sr.flipY = !sr.flipY;
             rb.velocity = new Vector2(0f, (rb.velocity.y * 0.4f));
-            rb.gravityScale = rb.gravityScale * gravityFlip;
+            rb.gravityScale = rb.gravityScale * -1.0f;
             flipCount = 0;
-        }
-        else if (Input.GetKeyDown("space") && sr.flipY == true && flipCount == 1) {
-            sr.flipY = false;
-            rb.velocity = new Vector2(0f, (rb.velocity.y * 0.4f));
-            rb.gravityScale = rb.gravityScale * gravityFlip;
-            flipCount = 0;
-        }
-    }
-
-    //purple abilities
-    private void purpleAbilities()
-    {
-        if (Input.GetKeyDown("space") && cloneCount == 1)
-        {
-            clone = Instantiate(paanClone, new Vector2(gameObject.transform.position.x, gameObject.transform.position.y), gameObject.transform.rotation) as GameObject;
-            clone.transform.SetParent(currentPlat.gameObject.transform);
-            clone.gameObject.GetComponent<Rigidbody2D>().gravityScale = rb.gravityScale;
-            clone.GetComponent<SpriteRenderer>().flipX = sr.flipX;
-            clone.GetComponent<SpriteRenderer>().flipY = sr.flipY;
-            cloneCount -= 1;
-            StartCoroutine(teleportToCloneWithDelay(clone));
-        } else if (Input.GetKeyDown("space") && cloneCount == 0)
-        {
-            StopCoroutine(teleportToCloneWithDelay(clone));
-            teleportToClone(clone);
         }
     }
 
@@ -303,11 +241,6 @@ public class paanScript : MonoBehaviour {
             anim.runtimeAnimatorController = yellowController;
             color = "yellow";
         }
-        //else if (color == "purple")
-        //{
-        //    anim.runtimeAnimatorController = yellowController;
-        //    color = "yellow";
-        //}
     }
 
     //**********************************************************************************************************************
@@ -391,6 +324,13 @@ public class paanScript : MonoBehaviour {
 
         Destroy(clone);
         cloneCount += 1;
+    }
+
+    private IEnumerator ResetGameAfterDelay()
+    {
+        yield return new WaitForSeconds(2.0f);
+
+        ResetGame();
     }
 
     private void ResetGame()
