@@ -109,8 +109,9 @@ public class paanScript : MonoBehaviour {
         {
             var xDir = Input.GetAxis("Horizontal");
             var isWalking = Input.GetButton("Walking");
+            var maxSpeed = isWalking ? 3.0f : 10.0f;
 
-            PaanMove(xDir, isWalking);
+            PaanMove(xDir, isWalking, maxSpeed);
         }
         else
         {
@@ -118,6 +119,7 @@ public class paanScript : MonoBehaviour {
             {
                 rb.velocity = new Vector2(rb.velocity.x * 0.45f, rb.velocity.y);
             }
+
             anim.SetBool("walking", false);
             anim.SetBool("running", false);
             reachedMaxSpeed = false;
@@ -204,15 +206,23 @@ public class paanScript : MonoBehaviour {
             sr.flipY = !sr.flipY;
             rb.velocity = new Vector2(0f, (rb.velocity.y * 0.4f));
             rb.gravityScale = rb.gravityScale * -1.0f;
+            Vector3 scale = transform.localScale;
+            scale = -scale;
             flipCount = 0;
         }
     }
 
     //**********************************************************************************************************************
     //basic movement stuff
-    private void PaanMove(float xDir, bool isWalking)
+    private void PaanMove(float xDir, bool isWalking, float maxSpeed)
     {
         sr.flipX = xDir == -1.0f ? true : false;
+
+        if (rb.velocity.x * xDir > maxSpeed)
+        {
+            rb.velocity = new Vector2(maxSpeed * xDir, rb.velocity.y);
+        }
+
 
         anim.SetBool("running", !isWalking);
         anim.SetBool("walking", isWalking);
@@ -220,7 +230,7 @@ public class paanScript : MonoBehaviour {
         speedMult = isWalking ? 0.5f : 1.0f;
 
         //rb.velocity = new Vector2(9.0f * speedMult * xDir, rb.velocity.y);
-        if (rb.velocity.x * xDir <= 10.0f)
+        if (rb.velocity.x * xDir <= maxSpeed)
         {
             rb.velocity += new Vector2(1.0f * speedMult * xDir, 0f);
         }
