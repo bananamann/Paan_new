@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using Assets;
+using System;
 
 public class paanScript : MonoBehaviour {
     public Rigidbody2D rb;
@@ -30,7 +31,7 @@ public class paanScript : MonoBehaviour {
     int cloneCount = 1;
 
     float jumpFromHeight;
-    float speedMult = 0.8f;
+    float speedMult = 1.0f;
     float gravityFlip = 1.0f;
 
     bool reachedMaxJump = false;
@@ -39,9 +40,11 @@ public class paanScript : MonoBehaviour {
     bool isFalling = false;
     bool canJumpAgain = true;
     bool canWallJump = false;
+    bool canWallJumpAgain = false;
+    bool justWallJumped = false;
 
-	// Use this for initialization
-	void Start () {
+    // Use this for initialization
+    void Start () {
         startPos = new Vector2(gameObject.transform.position.x, gameObject.transform.position.y);
         camStartPos = mainCamera.transform.position;
         anim = GetComponent<Animator>();
@@ -65,23 +68,10 @@ public class paanScript : MonoBehaviour {
             }
         }
 
-        if (isFalling)
-        {
-            isGrounded = false;
-        }
-
-        //if (color == "yellow")
-        //{
-        //    yellowAbilities();
-        //}
-        //else if (color == "blue")
-        //{
-        //    blueAbilities();
-        //}
-
         if (Input.GetButtonUp("Jump"))
         {
             reachedMaxJump = false;
+            canWallJumpAgain = true;
             canJumpAgain = true;
             if (!isFalling)
             {
@@ -103,36 +93,30 @@ public class paanScript : MonoBehaviour {
         {
             flipCount = 1;
         }
-
-        if (Input.GetKeyUp("left shift"))
-        {
-            anim.SetBool("running", false);
-            speedMult = 0.8f;
-        }
     }
 
     void FixedUpdate()
     {
         isFalling = (gravityFlip * rb.velocity.y) <= -0.1f ? true : false;
+        isGrounded = rb.velocity.y == 0f ? true : false;
 
         if (Input.GetButton("Jump"))
         {
             UseAbility();
         }
 
-        if (Input.GetKey("right") || (Input.GetAxis("Horizontal") == 1))
+        if (Input.GetAxis("Horizontal") == -1 || Input.GetAxis("Horizontal") == 1)
         {
-            walkRight();
-        }
-        else if (Input.GetKey("left") || (Input.GetAxis("Horizontal") == -1))
-        {
-            walkLeft();
+            var xDir = Input.GetAxis("Horizontal");
+            var isWalking = Input.GetButton("Walking");
+
+            PaanMove(xDir, isWalking);
         }
         else
         {
             if (isGrounded)
             {
-                rb.velocity = new Vector2(rb.velocity.x * 0.85f, rb.velocity.y);
+                rb.velocity = new Vector2(rb.velocity.x * 0.45f, rb.velocity.y);
             }
             anim.SetBool("walking", false);
             anim.SetBool("running", false);
@@ -145,24 +129,6 @@ public class paanScript : MonoBehaviour {
     void OnCollisionEnter2D(Collision2D coll)
     {
         currentPlat = coll;
-        if (sr.flipY == false)
-        {
-            if ((coll.transform.position.y < rb.transform.position.y) && coll.gameObject.tag.Contains("platform"))
-            {
-                isGrounded = true;
-                isFalling = false;
-            } else if ((coll.transform.position.y > rb.transform.position.y) && coll.gameObject.tag.Contains("platform"))
-            {
-                reachedMaxJump = true;
-            }
-        } else if (sr.flipY)
-        {
-            if ((coll.transform.position.y > rb.transform.position.y) && coll.gameObject.tag.Contains("platform"))
-            {
-                isGrounded = true;
-                isFalling = false;
-            }
-        }
 
         float collPosY;
         var paanPos = rb.transform.position;
@@ -198,20 +164,23 @@ public class paanScript : MonoBehaviour {
 
     private void YellowAbility()
     {
-        if (isGrounded && canJumpAgain && !isFalling)
+        if (isGrounded && canJumpAgain)
         {
             gameObject.transform.parent = null;
             jumpFromHeight = rb.transform.position.y;
             rb.velocity = new Vector2(rb.velocity.x, (14.0f * gravityFlip));
-            isGrounded = false;
             canJumpAgain = false;
         }
-        else if (canWallJump)
+        else if (Input.GetButtonDown("Jump") && canWallJump && canWallJumpAgain)
         {
-            var yJump = sr.flipY == true ? -20.0f : 20.0f;
-            rb.velocity = new Vector2((8.0f * gravityFlip), yJump);
+            var yJump = 24.0f * gravityFlip;
+            var xJump = 8.0f * gravityFlip;
+
+            rb.velocity = new Vector2(xJump, yJump);
             sr.flipX = !sr.flipX;
             canWallJump = false;
+            canWallJumpAgain = false;
+            justWallJumped = true;
         }
         else if (!reachedMaxJump && !isFalling && !isGrounded && !canJumpAgain)
         {
@@ -241,67 +210,27 @@ public class paanScript : MonoBehaviour {
 
     //**********************************************************************************************************************
     //basic movement stuff
-    private void walkRight()
+    private void PaanMove(float xDir, bool isWalking)
     {
-        if (Input.GetKey("left shift"))
-        {
-            anim.SetBool("running", true);
-            anim.SetBool("walking", false);
-            speedMult = 1.3f;
-        }
-        else
-        {
-            anim.SetBool("walking", true);
-            anim.SetBool("running", false);
-        }
-        sr.flipX = false;
-        
-        if (rb.velocity.x <= (8f * speedMult))
-        {
-            rb.velocity += new Vector2(speedMult, 0f);
-        } else
-        {
-            rb.velocity = new Vector2((8f * speedMult), rb.velocity.y);
-        }
-    }
+        sr.flipX = xDir == -1.0f ? true : false;
 
-    private void walkLeft()
-    {
-        if (Input.GetKey("left shift"))
+        anim.SetBool("running", !isWalking);
+        anim.SetBool("walking", isWalking);
+
+        speedMult = isWalking ? 0.5f : 1.0f;
+
+        //rb.velocity = new Vector2(9.0f * speedMult * xDir, rb.velocity.y);
+        if (rb.velocity.x * xDir <= 10.0f)
         {
-            anim.SetBool("running", true);
-            anim.SetBool("walking", false);
-            speedMult = 1.3f;
-        }
-        else
-        {
-            anim.SetBool("walking", true);
-            anim.SetBool("running", false);
-        }
-        sr.flipX = true;
-        
-        if (rb.velocity.x >= (-8f * speedMult))
-        {
-            rb.velocity -= new Vector2(speedMult, 0f);
-        } else
-        {
-            rb.velocity = new Vector2((-8f * speedMult), rb.velocity.y);
+            rb.velocity += new Vector2(1.0f * speedMult * xDir, 0f);
         }
     }
 
     //switch colors
     private void switchColors()
     {
-        if (color == "yellow")
-        {
-            anim.runtimeAnimatorController = blueController;
-            color = "blue";
-        }
-        else if (color == "blue")
-        {
-            anim.runtimeAnimatorController = yellowController;
-            color = "yellow";
-        }
+        anim.runtimeAnimatorController = color == "yellow" ? blueController : yellowController;
+        color = color == "yellow" ? "blue" : "yellow";
     }
 
     private void UseAbility()
