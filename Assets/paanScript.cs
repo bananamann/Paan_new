@@ -180,7 +180,10 @@ public class paanScript : MonoBehaviour {
         } else if (coll.gameObject.tag.Contains("wall"))
         {
             wallJumpStartPos = rb.position;
-            canWallJump = true;
+            if (rb.velocity.y != 0.0f)
+            {
+                canWallJump = true;
+            }
         }
         else if (coll.gameObject.tag.Contains("obstacle"))
         {
@@ -255,7 +258,6 @@ public class paanScript : MonoBehaviour {
 
         if (isGrounded)
         {
-            //rb.velocity = new Vector2(10.0f * speedMult * xDir, rb.velocity.y);
             rb.velocity += new Vector2(1.6f * speedMult * xDir, 0f);
         }
         else if (!isGrounded && (rb.velocity.x * xDir <= maxSpeed))
