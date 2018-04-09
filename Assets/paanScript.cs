@@ -38,6 +38,7 @@ public class paanScript : MonoBehaviour {
     bool isGrounded = true;
     bool isFalling = false;
     bool canJumpAgain = true;
+    bool alreadyReset = false;
 
     // Use this for initialization
     void Start () {
@@ -67,7 +68,10 @@ public class paanScript : MonoBehaviour {
 
         if (Input.GetButtonDown("Reset"))
         {
-            StartCoroutine(ResetGameAfterDelay());
+            if (!alreadyReset)
+            {
+                StartCoroutine(ResetGameAfterDelay());
+            }
         }
 
         if (Input.GetButtonDown("Flip"))
@@ -134,7 +138,11 @@ public class paanScript : MonoBehaviour {
         }
         else if (coll.gameObject.tag.Contains("obstacle"))
         {
-            StartCoroutine(ResetGameAfterDelay());
+            if (!alreadyReset)
+            {
+                alreadyReset = true;
+                StartCoroutine(ResetGameAfterDelay());
+            }
         }
     }
     // END COLLISIONS *********************
@@ -210,6 +218,7 @@ public class paanScript : MonoBehaviour {
 
     private IEnumerator ResetGameAfterDelay()
     {
+        alreadyReset = true;
         yield return new WaitForSeconds(2.0f);
         ResetGame();
     }
@@ -227,6 +236,7 @@ public class paanScript : MonoBehaviour {
         color = "yellow";
         anim.runtimeAnimatorController = baseController;
         reachedMaxJump = false;
+        alreadyReset = false;
         flipCount = 1;
     }
 }
