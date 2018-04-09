@@ -134,8 +134,7 @@ public class paanScript : MonoBehaviour {
         }
         else if (coll.gameObject.tag.Contains("obstacle"))
         {
-            //ResetGameAfterDelay();
-            ResetGame();
+            StartCoroutine(ResetGameAfterDelay());
         }
     }
     // END COLLISIONS *********************
