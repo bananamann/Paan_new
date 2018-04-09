@@ -10,7 +10,6 @@ public class paanScript : MonoBehaviour {
     Animator anim;
 
     public AnimatorOverrideController blueController;
-    public AnimatorOverrideController purpleController;
     public AnimatorOverrideController yellowController;
     public RuntimeAnimatorController baseController;
 
@@ -18,31 +17,24 @@ public class paanScript : MonoBehaviour {
     public GameObject mainCamera;
     GameObject clone;
 
-    Collision2D currentPlat;
-
     Vector2 startPos;
     Vector2 wallJumpStartPos;
     Vector3 camStartPos;
 
-    string direction;
     string color;
 
     int flipCount = 1;
-    int cloneCount = 1;
+    int jumpCount = 2;
 
     float jumpFromHeight;
-    float speedMult = 1.0f;
     float gravityFlip = 1.0f;
+    float maxFallSpeed = -20.0f;
     float xDir;
 
     bool reachedMaxJump = false;
-    bool reachedMaxSpeed = false;
     bool isGrounded = true;
     bool isFalling = false;
     bool canJumpAgain = true;
-    bool canWallJump = false;
-    bool canWallJumpAgain = false;
-    bool justWallJumped = false;
 
     // Use this for initialization
     void Start () {
@@ -58,21 +50,9 @@ public class paanScript : MonoBehaviour {
 	// Update is called once per frame
 	void Update ()
     {
-        if (canWallJump)
-        {
-            if (sr.flipX)
-            {
-                canWallJump = wallJumpStartPos.x - rb.position.x >= 0.3f ? false : true;
-            } else if (!sr.flipX)
-            {
-                canWallJump = rb.position.x - wallJumpStartPos.x >= 0.3f ? false : true;
-            }
-        }
-
         if (Input.GetButtonUp("Jump"))
         {
             reachedMaxJump = false;
-            canWallJumpAgain = true;
             canJumpAgain = true;
             if (!isFalling)
             {
@@ -85,14 +65,9 @@ public class paanScript : MonoBehaviour {
             ResetGame();
         }
 
-        if (Input.GetButtonDown("Switch"))
+        if (Input.GetButtonDown("Flip"))
         {
-            switchColors();
-        }
-
-        if (isGrounded && !isFalling && !Input.GetButton("Jump"))
-        {
-            flipCount = 1;
+            flipGrav();
         }
     }
 
@@ -101,88 +76,55 @@ public class paanScript : MonoBehaviour {
         isFalling = (gravityFlip * rb.velocity.y) <= -0.1f ? true : false;
         isGrounded = rb.velocity.y == 0f ? true : false;
 
-        if (Input.GetButton("Jump"))
+        if ((rb.velocity.y * gravityFlip) < maxFallSpeed)
         {
-            UseAbility();
+            rb.velocity = new Vector2(rb.velocity.x, (maxFallSpeed * gravityFlip));
         }
 
-        if (Input.GetAxis("Horizontal") == -1)
+        if (Input.GetButton("Jump"))
         {
-            if (xDir == 1)
-            {
-                rb.velocity = new Vector2((rb.velocity.x * 0.2f), rb.velocity.y);
-            }
-            xDir = -1.0f;
+            Jump();
+        }
+
+        if (Input.GetAxis("Horizontal") == -1 || Input.GetAxis("Horizontal") == 1)
+        {
+            xDir = Input.GetAxis("Horizontal");
             var isWalking = Input.GetButton("Walking");
             var maxSpeed = isWalking ? 3.0f : 10.0f;
-            sr.flipX = true;
 
-            PaanMove(xDir, isWalking, maxSpeed);
-        } else if (Input.GetAxis("Horizontal") == 1)
-        {
-            if (xDir == -1.0f)
-            {
-                rb.velocity = new Vector2((rb.velocity.x * 0.2f), rb.velocity.y);
-            }
-            xDir = 1.0f;
-            var isWalking = Input.GetButton("Walking");
-            var maxSpeed = isWalking ? 3.0f : 10.0f;
-            sr.flipX = false;
-
+            sr.flipX = xDir == -1 ? true : false;
             PaanMove(xDir, isWalking, maxSpeed);
         }
         else
         {
-            if (isGrounded)
-            {
-                rb.velocity = new Vector2(rb.velocity.x * 0.45f, rb.velocity.y);
-            }
+            rb.velocity = new Vector2((rb.velocity.x * 0.45f), rb.velocity.y);
 
             anim.SetBool("walking", false);
             anim.SetBool("running", false);
-            reachedMaxSpeed = false;
         }
     }
 
     // COLLISIONS *********************
-    void OnCollisionExit2D(Collision2D coll)
-    {
-        if (isFalling)
-        {
-            rb.velocity = new Vector2((rb.velocity.x * 0.2f), rb.velocity.y);
-        }
-    }
-
-    //landing on platforms
     void OnCollisionEnter2D(Collision2D coll)
     {
-        currentPlat = coll;
-
-        float collPosY;
         var paanPos = rb.transform.position;
+        var collPos = coll.transform.position;
 
-        if (coll.gameObject.tag.Contains("platform")) {
+        var contPos = new Vector2(coll.contacts[0].point.x, collPos.y);
+
+        var collHalfWidth = (coll.collider.bounds.size.x / 2.0f);
+
+        var hitSide = (Vector2.Distance(contPos, collPos) >= collHalfWidth) ? true : false;
+
+        if (coll.gameObject.tag.Contains("platform") && !hitSide) {
             gameObject.transform.SetParent(coll.gameObject.transform);
-            if (coll.transform.childCount == 0) {
-                collPosY = coll.transform.position.y;
-            } else {
-                collPosY = coll.transform.GetChild(0).transform.position.y;
-            }
 
-            if (paanPos.y > collPosY && !sr.flipY) {
-                rb.velocity = new Vector2(rb.velocity.x, 0f);
-                reachedMaxJump = false;
-            } else if (paanPos.y < collPosY && sr.flipY)
+            if ((paanPos.y * gravityFlip) > (collPos.y * gravityFlip))
             {
                 rb.velocity = new Vector2(rb.velocity.x, 0f);
+                flipCount = 1;
+                jumpCount = 2;
                 reachedMaxJump = false;
-            }
-        } else if (coll.gameObject.tag.Contains("wall"))
-        {
-            wallJumpStartPos = rb.position;
-            if (rb.velocity.y != 0.0f)
-            {
-                canWallJump = true;
             }
         }
         else if (coll.gameObject.tag.Contains("obstacle"))
@@ -193,29 +135,22 @@ public class paanScript : MonoBehaviour {
     }
     // END COLLISIONS *********************
 
-    private void YellowAbility()
+    private void Jump()
     {
-        if (isGrounded && canJumpAgain)
-        {
-            gameObject.transform.parent = null;
-            jumpFromHeight = rb.transform.position.y;
-            rb.velocity = new Vector2(rb.velocity.x, (14.0f * gravityFlip));
-            canJumpAgain = false;
-        }
-        else if (Input.GetButtonDown("Jump") && canWallJump && canWallJumpAgain)
-        {
-            var yJump = 24.0f * gravityFlip;
-            var xJump = 8.0f * gravityFlip;
+        gameObject.transform.parent = null;
 
-            rb.velocity = new Vector2(xJump, yJump);
-            sr.flipX = !sr.flipX;
-            canWallJump = false;
-            canWallJumpAgain = false;
-            justWallJumped = true;
-        }
-        else if (!reachedMaxJump && !isFalling && !isGrounded && !canJumpAgain)
+        if (jumpCount > 0 && canJumpAgain)
         {
-            if (sr.flipY == true)
+            jumpFromHeight = rb.transform.position.y;
+            jumpCount -= 1;
+            rb.velocity = new Vector2(rb.velocity.x, (14.0f * gravityFlip));
+        }
+
+        canJumpAgain = false;
+
+        if (!reachedMaxJump && !isFalling && !isGrounded)
+        {
+            if (sr.flipY)
             {
                 reachedMaxJump = (jumpFromHeight - rb.position.y) >= 1.6f ? true : false;
             }
@@ -227,10 +162,12 @@ public class paanScript : MonoBehaviour {
         }
     }
 
-    private void BlueAbility()
+    private void flipGrav()
     {
         if (flipCount == 1)
         {
+            anim.runtimeAnimatorController = color == "yellow" ? blueController : yellowController;
+            color = color == "yellow" ? "blue" : "yellow";
             gravityFlip = gravityFlip * -1.0f;
             sr.flipY = !sr.flipY;
             rb.velocity = new Vector2(0f, (rb.velocity.y * 0.4f));
@@ -250,38 +187,18 @@ public class paanScript : MonoBehaviour {
             rb.velocity = new Vector2(maxSpeed * xDir, rb.velocity.y);
         }
 
-
         anim.SetBool("running", !isWalking);
         anim.SetBool("walking", isWalking);
 
-        speedMult = isWalking ? 0.5f : 1.0f;
+        var speedMult = isWalking ? 0.5f : 1.0f;
 
         if (isGrounded)
         {
             rb.velocity += new Vector2(1.6f * speedMult * xDir, 0f);
         }
-        else if (!isGrounded && (rb.velocity.x * xDir <= maxSpeed))
+        else if (!isGrounded)
         {
             rb.velocity += new Vector2(1.0f * speedMult * xDir, 0f);
-        }
-    }
-
-    //switch colors
-    private void switchColors()
-    {
-        anim.runtimeAnimatorController = color == "yellow" ? blueController : yellowController;
-        color = color == "yellow" ? "blue" : "yellow";
-    }
-
-    private void UseAbility()
-    {
-        if (color == "yellow")
-        {
-            YellowAbility();
-        }
-        else
-        {
-            BlueAbility();
         }
     }
 
@@ -302,7 +219,6 @@ public class paanScript : MonoBehaviour {
         rb.velocity = new Vector2(0f, 0f);
         color = "yellow";
         anim.runtimeAnimatorController = baseController;
-        canJumpAgain = true;
         reachedMaxJump = false;
         flipCount = 1;
     }

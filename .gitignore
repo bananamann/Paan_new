@@ -2,3 +2,5 @@ Temp/
 Library/
 /ProjectSettings
 obj/
+/.vs/*
+

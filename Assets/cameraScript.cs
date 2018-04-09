@@ -5,8 +5,8 @@ public class cameraScript : MonoBehaviour {
     public GameObject player;
     public GameObject background;
 
-    public float smoothSpeed = 0.25f;
-    public Vector3 offset;
+    public float smoothSpeed = 0.35f;
+    public Vector3 offset = new Vector3(0.0f, 1.0f, 0.0f);
 
     public bool followX = true;
     public bool followY = false;
@@ -17,38 +17,38 @@ public class cameraScript : MonoBehaviour {
 	}
 
     void Update() {
-        if (player.transform.position.x < 0f) {
-            followX = false;
-        } else {
-            followX = true;
-        }
+        //if (player.transform.position.x < 0f) {
+        //    followX = false;
+        //} else {
+        //    followX = true;
+        //}
 
-        if (player.transform.position.y < 0) {
-            followY = false;
-        } else {
-            followY = true;
-        }
+        //if (player.transform.position.y < 0) {
+        //    followY = false;
+        //} else {
+        //    followY = true;
+        //}
     }
 
 	void FixedUpdate () {
-        float xPos = transform.position.x;
-        float yPos = transform.position.y;
+        //float xPos = transform.position.x;
+        //float yPos = transform.position.y;
 
-        if (followX == true) {
-            xPos = player.transform.position.x;
-        } else {
-            xPos = transform.position.x;
-        }
+        //if (followX) {
+        //    xPos = player.transform.position.x;
+        //} else {
+        //    xPos = transform.position.x;
+        //}
 
-        if (followY == true) {
-            yPos = player.transform.position.y;
-        } else {
-            yPos = transform.position.y;
-        }
+        //if (followY) {
+        //    yPos = player.transform.position.y;
+        //} else {
+        //    yPos = transform.position.y;
+        //}
 
-        //Vector3 desiredPosition = new Vector3(xPos, yPos, transform.position.z);
-        //Vector3 smoothedPosition = Vector3.Lerp(transform.position, desiredPosition, smoothSpeed);
-        //transform.position = smoothedPosition;
-        transform.position = new Vector3(xPos, yPos, transform.position.z);
+        Vector3 desiredPosition = (new Vector3(player.transform.position.x, player.transform.position.y, transform.position.z)) + offset;
+        Vector3 smoothedPosition = Vector3.Lerp(transform.position, desiredPosition, smoothSpeed);
+        transform.position = smoothedPosition;
+        //transform.position = new Vector3(xPos, yPos, transform.position.z);
     }
 }
