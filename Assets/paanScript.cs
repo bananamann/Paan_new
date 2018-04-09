@@ -67,7 +67,7 @@ public class paanScript : MonoBehaviour {
 
         if (Input.GetButtonDown("Reset"))
         {
-            ResetGame();
+            StartCoroutine(ResetGameAfterDelay());
         }
 
         if (Input.GetButtonDown("Flip"))
@@ -212,7 +212,6 @@ public class paanScript : MonoBehaviour {
     private IEnumerator ResetGameAfterDelay()
     {
         yield return new WaitForSeconds(2.0f);
-
         ResetGame();
     }
 
@@ -222,6 +221,8 @@ public class paanScript : MonoBehaviour {
         mainCamera.gameObject.transform.position = camStartPos;
         sr.flipY = false;
         rb.gravityScale = 6.0f;
+        cc.offset = new Vector2(0f, -0.3f);
+        bc.offset = new Vector2(0.078f, -0.066f);
         gravityFlip = 1.0f;
         rb.velocity = new Vector2(0f, 0f);
         color = "yellow";
