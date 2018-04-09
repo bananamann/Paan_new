@@ -6,6 +6,9 @@ using System;
 public class paanScript : MonoBehaviour {
     public Rigidbody2D rb;
 
+    BoxCollider2D bc;
+    CircleCollider2D cc;
+
     SpriteRenderer sr;
     Animator anim;
 
@@ -43,6 +46,8 @@ public class paanScript : MonoBehaviour {
         anim = GetComponent<Animator>();
         rb = GetComponent<Rigidbody2D>();
         sr = GetComponent<SpriteRenderer>();
+        bc = GetComponent<BoxCollider2D>();
+        cc = GetComponent<CircleCollider2D>();
         anim.runtimeAnimatorController = baseController;
         color = "yellow";
     }
@@ -170,6 +175,8 @@ public class paanScript : MonoBehaviour {
             color = color == "yellow" ? "blue" : "yellow";
             gravityFlip = gravityFlip * -1.0f;
             sr.flipY = !sr.flipY;
+            bc.offset = bc.offset * -1.0f;
+            cc.offset = cc.offset * -1.0f;
             rb.velocity = new Vector2(0f, (rb.velocity.y * 0.4f));
             rb.gravityScale = rb.gravityScale * -1.0f;
             Vector3 scale = transform.localScale;
